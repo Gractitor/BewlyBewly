@@ -67,7 +67,7 @@ const showDislikeDialog = ref<boolean>(false)
 const selectedDislikeReason = ref<number>(1)
 const PAGE_SIZE = 30
 const requestAttempts = ref<number>(0)
-const MAX_REQUEST_ATTEMPTS = 5
+const MAX_REQUEST_ATTEMPTS = 15
 const API_REQUEST_DELAY = 2000
 
 onKeyStroke((e: KeyboardEvent) => {
