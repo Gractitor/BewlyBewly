@@ -67,7 +67,7 @@ const showDislikeDialog = ref<boolean>(false)
 const selectedDislikeReason = ref<number>(1)
 const PAGE_SIZE = 30
 const requestAttempts = ref<number>(0)
-const MAX_REQUEST_ATTEMPTS = 15
+const MAX_REQUEST_ATTEMPTS = 10
 const API_REQUEST_DELAY = 2000
 
 onKeyStroke((e: KeyboardEvent) => {
@@ -161,12 +161,12 @@ function initPageAction() {
 async function getRecommendVideos() {
   try {
     requestAttempts.value++
-    
+
     if (requestAttempts.value > MAX_REQUEST_ATTEMPTS) {
       noMoreContent.value = true
       return
     }
-    
+
     let i = 0
     if (!filterFunc.value || (videoList.value.length < PAGE_SIZE && filterFunc.value)) {
       const pendingVideos: VideoElement[] = Array.from({
@@ -234,7 +234,6 @@ async function getRecommendVideos() {
     else if (response.code === -412 || response.code === -504) {
       console.warn('API request limited or timeout, waiting longer before retry')
       noMoreContent.value = true
-      return
     }
   }
   finally {
@@ -248,7 +247,8 @@ async function getRecommendVideos() {
           setTimeout(() => {
             getRecommendVideos()
           }, API_REQUEST_DELAY)
-        } else {
+        }
+        else {
           noMoreContent.value = true
         }
       }
@@ -259,12 +259,12 @@ async function getRecommendVideos() {
 async function getAppRecommendVideos() {
   try {
     requestAttempts.value++
-    
+
     if (requestAttempts.value > MAX_REQUEST_ATTEMPTS) {
       noMoreContent.value = true
       return
     }
-    
+
     let i = 0
     if (!appFilterFunc.value || (appVideoList.value.length < PAGE_SIZE && appFilterFunc.value)) {
       const pendingVideos: AppVideoElement[] = Array.from({
@@ -340,7 +340,8 @@ async function getAppRecommendVideos() {
           setTimeout(() => {
             getAppRecommendVideos()
           }, API_REQUEST_DELAY)
-        } else {
+        }
+        else {
           noMoreContent.value = true
         }
       }
