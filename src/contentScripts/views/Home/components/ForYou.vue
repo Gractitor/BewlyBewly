@@ -66,6 +66,9 @@ const videoCardRef = ref(null)
 const showDislikeDialog = ref<boolean>(false)
 const selectedDislikeReason = ref<number>(1)
 const PAGE_SIZE = 30
+const requestAttempts = ref<number>(0)
+const MAX_REQUEST_ATTEMPTS = 5
+const API_REQUEST_DELAY = 2000
 
 onKeyStroke((e: KeyboardEvent) => {
   if (showDislikeDialog.value) {
@@ -115,6 +118,7 @@ onActivated(() => {
 async function initData() {
   videoList.value.length = 0
   appVideoList.value.length = 0
+  requestAttempts.value = 0
   await getData()
 }
 
@@ -156,6 +160,13 @@ function initPageAction() {
 
 async function getRecommendVideos() {
   try {
+    requestAttempts.value++
+    
+    if (requestAttempts.value > MAX_REQUEST_ATTEMPTS) {
+      noMoreContent.value = true
+      return
+    }
+    
     let i = 0
     if (!filterFunc.value || (videoList.value.length < PAGE_SIZE && filterFunc.value)) {
       const pendingVideos: VideoElement[] = Array.from({
@@ -220,6 +231,11 @@ async function getRecommendVideos() {
     else if (response.code === 62011) {
       needToLoginFirst.value = true
     }
+    else if (response.code === -412 || response.code === -504) {
+      console.warn('API request limited or timeout, waiting longer before retry')
+      noMoreContent.value = true
+      return
+    }
   }
   finally {
     const filledItems = videoList.value.filter(video => video.item)
@@ -228,7 +244,13 @@ async function getRecommendVideos() {
     if (!needToLoginFirst.value) {
       await nextTick()
       if (!await haveScrollbar() || filledItems.length < PAGE_SIZE || filledItems.length < 1) {
-        getRecommendVideos()
+        if (requestAttempts.value < MAX_REQUEST_ATTEMPTS) {
+          setTimeout(() => {
+            getRecommendVideos()
+          }, API_REQUEST_DELAY)
+        } else {
+          noMoreContent.value = true
+        }
       }
     }
   }
@@ -236,6 +258,13 @@ async function getRecommendVideos() {
 
 async function getAppRecommendVideos() {
   try {
+    requestAttempts.value++
+    
+    if (requestAttempts.value > MAX_REQUEST_ATTEMPTS) {
+      noMoreContent.value = true
+      return
+    }
+    
     let i = 0
     if (!appFilterFunc.value || (appVideoList.value.length < PAGE_SIZE && appFilterFunc.value)) {
       const pendingVideos: AppVideoElement[] = Array.from({
@@ -307,7 +336,13 @@ async function getAppRecommendVideos() {
     if (!needToLoginFirst.value) {
       await nextTick()
       if (!await haveScrollbar() || filledItems.length < PAGE_SIZE || filledItems.length < 1) {
-        getAppRecommendVideos()
+        if (requestAttempts.value < MAX_REQUEST_ATTEMPTS) {
+          setTimeout(() => {
+            getAppRecommendVideos()
+          }, API_REQUEST_DELAY)
+        } else {
+          noMoreContent.value = true
+        }
       }
     }
   }
